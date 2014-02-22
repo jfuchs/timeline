@@ -1,0 +1,116 @@
+<html>
+  <head>
+    <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+  </head>
+  <style>
+
+    * {
+      font-family: Georgia;
+    }
+
+    svg {
+      background: #fff;
+      box-shadow: 0 0 30px rgba(0,0,0,0.5);
+    }
+
+    line {
+      stroke-width: 1px;
+      stroke: #ccc;
+    }
+
+    text {
+      font-size: 12px;
+    }
+
+  </style>
+  <body>
+  </body>
+  <script>
+
+  var df = d3.time.format("%Y-%m-%d")
+
+  var dateRange = [
+    df.parse('2014-03-01'),
+    df.parse('2014-06-01')
+  ]
+
+  var events = [
+    {
+      name: 'Review PM Business Projections',
+      date: df.parse('2014-03-07')
+    },
+    {
+      name: 'Clients Update Usage Model',
+      date: df.parse('2014-03-10'),
+      endDate: df.parse('2014-03-17')
+    },
+    {
+      name: 'Services Update Scaling Model',
+      date: df.parse('2014-03-06'),
+      endDate: df.parse('2014-03-28')
+    },
+    {
+      name: 'Review Business Projection and Plan w/ Leadership',
+      date: df.parse('2014-03-19')
+    },
+    {
+      name: 'Scaling model ready',
+      date: df.parse('2014-03-28')
+    },
+    {
+      name: 'Services Complete Gameday Preparation',
+      date: df.parse('2014-04-12')
+    },
+    {
+      name: 'Individual Platform Gameday',
+      date: df.parse('2014-04-13')
+    },
+    {
+      name: 'Coordinated Gameday',
+      date: df.parse('2014-04-27')
+    }
+  ]
+
+  var svg = d3.select('body').append('svg')
+      .attr('height', 450)
+      .attr('width', 800)
+
+  var xScale = d3.time.scale()
+      .range([100, 700])
+      .domain(dateRange)
+
+  var colorScale = d3.scale.category10()
+
+  var timeline = svg.append('line')
+      .attr('class', 'timeline')
+      .attr('transform', 'translate(0,400)')
+      .attr('x1', xScale(dateRange[0]))
+      .attr('x2', xScale(dateRange[1]))
+
+  var eventGroups = svg.append('g')
+      .attr('class', 'events')
+      .attr('transform', 'translate(0,400)')
+
+  var events = eventGroups.selectAll('g')
+      .data(events)
+    .enter().append('g')
+      .attr('class', 'event')
+      .attr('transform', function (event) {
+        return 'translate(' + xScale(event.date) + ', 0)'
+      })
+      .attr('fill', function (event) {
+        return colorScale(event.name)
+      })
+
+  events.append('circle')
+    .attr('r', 5)
+
+  events.append('text')
+    .text(function (event) {
+      return event.name
+    })
+    .attr('transform', 'rotate(-40) translate(20 5)')
+
+
+  </script>
+</html>

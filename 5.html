@@ -1,0 +1,275 @@
+<html>
+  <head>
+    <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+  </head>
+  <style>
+
+    * {
+      font-family: Georgia;
+    }
+
+    body {
+      margin: 0;
+      background: grey;
+    }
+
+    figure {
+      position: relative;
+      height: 450px;
+      width: 800px;
+      margin: 0;
+      overflow: hidden;
+      background: white;
+      box-shadow: 0 0 30px rgba(0,0,0,0.5);
+    }
+
+    svg {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 800px;
+      height: 450px;
+    }
+
+    .timeline {
+      stroke: #999;
+    }
+
+    .guides {
+      stroke-opacity: 0.5;
+    }
+
+    text {
+      font-size: 12px;
+    }
+
+    table {
+      border-collapse: separate;
+      border-spacing: 5px;
+      margin: 50px 10px;
+    }
+
+    td {
+      vertical-align: bottom;
+    }
+
+    small, .month-label {
+      display: block;
+      font-size: 10px;
+      text-transform: uppercase;
+      line-height: 20px;
+      font-family: helvetica;
+      font-weight: bold;
+    }
+
+  </style>
+  <body>
+    <figure></figure>
+  </body>
+  <script>
+
+  var df = d3.time.format('%Y-%m-%d')
+
+  var dateRange = [
+    df.parse('2014-03-01'),
+    df.parse('2014-06-01')
+  ]
+
+  var events = [
+    {
+      name: 'Review PM Business Projections',
+      date: df.parse('2014-03-07')
+    },
+    {
+      name: 'Clients Update Usage Model',
+      date: df.parse('2014-03-10'),
+      endDate: df.parse('2014-03-17')
+    },
+    {
+      name: 'Services Update Scaling Model',
+      date: df.parse('2014-03-06'),
+      endDate: df.parse('2014-03-28')
+    },
+    {
+      name: 'Review Business Projection and Plan w/&nbsp;Leadership',
+      date: df.parse('2014-03-19')
+    },
+    {
+      name: 'Scaling model ready',
+      date: df.parse('2014-03-28')
+    },
+    {
+      name: 'Services Complete Gameday Preparation',
+      date: df.parse('2014-04-12')
+    },
+    {
+      name: 'Individual Platform Gameday',
+      date: df.parse('2014-05-13')
+    },
+    {
+      name: 'Coordinated Gameday',
+      date: df.parse('2014-05-27')
+    }
+  ]
+
+  var dayMonthFormat = d3.time.format('%b&nbsp;%e')
+  var monthFormat = d3.time.format('%B')
+
+  events = events.sort(function (a, b) {
+    return a.date - b.date
+  })
+
+  // Time scales
+  var timeScale = d3.time.scale()
+      .range([100, 700])
+      .domain(dateRange)
+  var colorScale = d3.scale.category10()
+
+
+  // Scale convenience functions
+  var labelScaleFn = function (event) {
+    return event.td.offsetLeft + (event.td.offsetWidth * 0.4)
+  }
+  var timeScaleFn = function (event) {
+    return timeScale(event.date)
+  }
+  var colorScaleFn = function (event) {
+    return colorScale(event.name)
+  }
+
+  var table = d3.select('figure').append('table')
+  var tr = table.append('tr')
+  tr.selectAll('td')
+      .data(events)
+      .enter().append('td')
+      .html(function (event) {
+        return event.name
+            + ' <small>'
+            + dayMonthFormat(event.date)
+            + '</small>'
+      })
+      .attr('style', function (event) {
+        return 'color:' + colorScale(event.name)
+      })
+      .each(function (event) {
+        event.td = this
+      })
+
+  var svg = d3.select('figure').append('svg')
+
+  var guideStartY = table[0][0].offsetHeight
+      + 45
+
+  var guideHeight = 50
+
+  var lineHeight = guideStartY + 50
+
+  // Group events whose guidelines might intersect, ordered by what 'track' they
+  // should use. Assumes events is already sorted.
+  var lineGroups = []
+  var currentGroup = [events[0]]
+  var previousEvent = events[0]
+  for (var i = 1; i < events.length; i++) {
+    var nextEvent = events[i]
+    var previousEvent
+
+    rightMostPrevious = Math.max(labelScaleFn(previousEvent), timeScaleFn(previousEvent))
+    leftMostNext = Math.min(labelScaleFn(nextEvent), timeScaleFn(nextEvent))
+    if (rightMostPrevious > leftMostNext) {
+      // if the lines are going to the left, add the next on the end.
+      if (labelScaleFn(nextEvent) > timeScaleFn(nextEvent)) {
+        currentGroup.push(nextEvent)
+      } else {
+        currentGroup.unshift(nextEvent)
+      }
+    } else {
+      lineGroups.push(currentGroup)
+      currentGroup = [nextEvent]
+    }
+    previousEvent = nextEvent
+  }
+  lineGroups.push(currentGroup)
+
+
+  for (var i = 0; i < lineGroups.length; i++) {
+    var lineGroup = lineGroups[i]
+    for (var j = 0; j < lineGroup.length; j++) {
+      var event = lineGroup[j]
+      event.fraction = (j + 1) / (lineGroup.length + 1)
+    }
+  }
+
+
+  var timeline = svg.append('g')
+    .attr('class', 'timeline')
+
+  for (var month = d3.time.month(dateRange[0]);
+      month < dateRange[1];
+      month = d3.time.month.offset(month, 1)) {
+    var lastDayOfMonth = d3.time.day.offset(d3.time.month.offset(month, 1), -1)
+
+    svg.append('line')
+        .attr('class', 'timeline')
+        .attr('x1', timeScale(month))
+        .attr('x2', timeScale(lastDayOfMonth))
+        .attr('y1', guideStartY + guideHeight + 5)
+        .attr('y2', guideStartY + guideHeight + 5)
+
+    svg.append('text')
+        .attr('class', 'month-label')
+        .attr('x', timeScale(month))
+        .attr('y', guideStartY + guideHeight + 20)
+        .text(monthFormat(month))
+        .attr('fill', '#ccc')
+
+  }
+
+  var labelLines = svg.append('g')
+      .attr('class', 'guides')
+
+
+  var enter = labelLines.selectAll('line')
+      .data(events)
+    .enter()
+
+  enter.append('line')
+      .attr('x1', labelScaleFn)
+      .attr('y1', guideStartY)
+      .attr('x2', labelScaleFn)
+      .attr('y2', function (event) {
+        return guideStartY + (guideHeight * event.fraction)
+      })
+      .attr('stroke', colorScaleFn)
+
+  enter.append('line')
+      .attr('x1', labelScaleFn)
+      .attr('y1', function (event) {
+        return guideStartY + (guideHeight * event.fraction)
+      })
+      .attr('x2', timeScaleFn)
+      .attr('y2', function (event) {
+        return guideStartY + (guideHeight * event.fraction)
+      })
+      .attr('stroke', colorScaleFn)
+
+  enter.append('line')
+      .attr('x1', timeScaleFn)
+      .attr('y1', function (event) {
+        return guideStartY + (guideHeight * event.fraction)
+      })
+      .attr('x2', timeScaleFn)
+      .attr('y2', guideStartY + guideHeight)
+      .attr('stroke', colorScaleFn)
+
+  svg.selectAll('circle')
+      .data(events)
+    .enter().append('circle')
+      .attr('cx', timeScaleFn)
+      .attr('cy', guideStartY + guideHeight + 5)
+      .attr('r', 3)
+      .attr('fill', function (event) {
+        return colorScale(event.name)
+      })
+
+  </script>
+</html>

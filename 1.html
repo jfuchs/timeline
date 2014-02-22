@@ -1,0 +1,136 @@
+<html>
+  <head>
+    <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+  </head>
+  <style>
+
+    * {
+      font-family: Helvetica, sans-serif;
+    }
+
+    svg {
+      background: #999;
+    }
+
+  </style>
+  <body>
+  </body>
+  <script>
+
+  var df = d3.time.format("%Y-%m-%d")
+
+  var dateRange = [
+    df.parse('2014-03-01'),
+    df.parse('2014-06-01')
+  ]
+
+  var events = [
+    {
+      name: 'Review PM Business Projections',
+      instances: [
+        {date: df.parse('2014-03-07')}
+      ]
+    },
+    {
+      name: 'Clients Update Usage Model',
+      instances: [
+        {date: df.parse('2014-03-10'), endDate: df.parse('2014-03-17')}
+      ]
+    },
+    {
+      name: 'Services Update Scaling Model',
+      instances: [
+        {date: df.parse('2014-03-06'), endDate: df.parse('2014-03-28')}
+      ]
+    },
+    {
+      name: 'Review Business Projection and Plan w/ Leadership',
+      instances: [
+        {date: df.parse('2014-03-19')}
+      ]
+    },
+    {
+      name: 'Scaling model ready',
+      instances: [
+        {date: df.parse('2014-03-28')}
+      ]
+    },
+    {
+      name: 'Services Complete Gameday Preparation',
+      instances: [
+        {date: df.parse('2014-04-12')}
+      ]
+    },
+    {
+      name: 'Individual Platform Gamedays',
+      instances: [
+        {date: df.parse('2014-04-13')},
+        {date: df.parse('2014-04-20')}
+      ]
+    },
+    {
+      name: 'Coordinated Gamedays',
+      instances: [
+        {date: df.parse('2014-04-27')},
+        {date: df.parse('2014-05-03')},
+        {date: df.parse('2014-05-10')},
+        {date: df.parse('2014-05-17')},
+        {date: df.parse('2014-05-24')}
+      ]
+    }
+  ]
+
+  var svg = d3.select('body').append('svg')
+      .attr('height', 600)
+      .attr('width', 800)
+
+  var timeline = svg.append('g')
+      .attr('class', 'timeline')
+      .attr('transform', 'translate(25, 25)')
+
+  var labels = svg.append('g')
+      .attr('class', 'labels')
+      .attr('transform', 'translate(450, 25)')
+
+  var xAxis = d3.time.scale()
+      .domain(dateRange)
+      .range([0, 400])
+
+  var yAxis = d3.scale.ordinal()
+      .domain(events.map(function (event) { return event.name }))
+      .rangePoints([0, 200], 1.0)
+
+  var labelEnter = labels.selectAll('text')
+      .data(events)
+    .enter().append('text')
+      .text(function (event) { return event.name })
+      .attr('y', function (event) { return yAxis(event.name) })
+      .text(function (event) {return event.name })
+
+  var events = timeline.selectAll('g.event')
+      .data(events)
+    .enter().append('g')
+      .attr('class', 'event')
+      .attr('transform', function (event) { return 'translate(0,' + yAxis(event.name) + ')' })
+
+  events.selectAll('rect')
+      .data(function (event) { return event.instances })
+    .enter().append('rect')
+      .attr('x', function (instance) {
+        return xAxis(instance.date)
+      })
+      .attr('height', 10)
+      .attr('rx', 3)
+      .attr('ry', 3)
+      .attr('width', function (instance) {
+        var ending = instance.endDate ?
+            d3.time.day.offset(instance.endDate, 1) :
+            d3.time.day.offset(instance.date, 1)
+        return xAxis(ending) - xAxis(instance.date)
+      })
+
+
+
+
+  </script>
+</html>

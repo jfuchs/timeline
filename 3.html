@@ -1,0 +1,180 @@
+<html>
+  <head>
+    <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+  </head>
+  <style>
+
+    * {
+      font-family: Georgia;
+    }
+
+    body {
+      margin: 0;
+      background: grey;
+    }
+
+    figure {
+      position: relative;
+      height: 450px;
+      width: 800px;
+      margin: 0;
+      overflow: hidden;
+      background: white;
+      box-shadow: 0 0 30px rgba(0,0,0,0.5);
+    }
+
+    svg {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 800px;
+      height: 450px;
+    }
+
+    .timeline {
+      stroke: #999;
+    }
+
+    .guide {
+      /*stroke: #ccc;*/
+    }
+
+    text {
+      font-size: 12px;
+    }
+
+    table {
+      border-collapse: collapse;
+      margin: 50px;
+    }
+
+    td {
+      vertical-align: bottom;
+    }
+
+  </style>
+  <body>
+    <figure></figure>
+  </body>
+  <script>
+
+  var df = d3.time.format("%Y-%m-%d")
+
+  var dateRange = [
+    df.parse('2014-03-01'),
+    df.parse('2014-06-01')
+  ]
+
+  var events = [
+    {
+      name: 'Review PM Business Projections',
+      date: df.parse('2014-03-07')
+    },
+    {
+      name: 'Clients Update Usage Model',
+      date: df.parse('2014-03-10'),
+      endDate: df.parse('2014-03-17')
+    },
+    {
+      name: 'Services Update Scaling Model',
+      date: df.parse('2014-03-06'),
+      endDate: df.parse('2014-03-28')
+    },
+    {
+      name: 'Review Business Projection and Plan w/ Leadership',
+      date: df.parse('2014-03-19')
+    },
+    {
+      name: 'Scaling model ready',
+      date: df.parse('2014-03-28')
+    },
+    {
+      name: 'Services Complete Gameday Preparation',
+      date: df.parse('2014-04-12')
+    },
+    {
+      name: 'Individual Platform Gameday',
+      date: df.parse('2014-04-13')
+    },
+    {
+      name: 'Coordinated Gameday',
+      date: df.parse('2014-04-27')
+    }
+  ]
+
+  events = events.sort(function (a, b) {
+    return a.date - b.date
+  })
+
+  var xScale = d3.time.scale()
+      .range([100, 700])
+      .domain(dateRange)
+
+  var table = d3.select('figure').append('table')
+
+  var tr = table.append('tr')
+
+  var colorScale = d3.scale.category10()
+
+  tr.selectAll('td')
+      .data(events)
+      .enter().append('td')
+      .html(function (event) {
+        return event.name
+      })
+      .attr('style', function (event) {
+        return 'color:' + colorScale(event.name)
+      })
+      .each(function (event) {
+        event.td = this
+      })
+
+  var svg = d3.select('figure').append('svg')
+
+  var guideStartHeight = table[0][0].offsetHeight
+      + 50 /* table's top margin */
+      + 10 /* spacing between text and guide start */
+
+  var guideEndHeight = guideStartHeight
+      + 50 /* vertical spacing between captions and timeline */
+
+  svg.append('line')
+      .attr('class', 'timeline')
+      .attr('x1', xScale(dateRange[0]))
+      .attr('x2', xScale(dateRange[1]))
+      .attr('y1', guideEndHeight + 10)
+      .attr('y2', guideEndHeight + 10)
+
+  var labelLines = svg.append('g')
+
+  labelLines.selectAll('line')
+      .data(events)
+    .enter().append('line')
+      .attr('class', 'guide')
+      .attr('x1', function (event) {
+        return event.td.offsetLeft + (event.td.offsetWidth * 0.4) + 50
+      })
+      .attr('y1', guideStartHeight)
+      .attr('x2', function (event) {
+        return xScale(event.date)
+      })
+      .attr('y2', guideEndHeight - 5)
+      .attr('stroke', function (event) {
+        return colorScale(event.name)
+      })
+      .attr('stroke-opacity', '0.3')
+
+  svg.selectAll('circle')
+      .data(events)
+    .enter().append('circle')
+      .attr('cx', function (event) {
+        return xScale(event.date)
+      })
+      .attr('cy', guideEndHeight)
+      .attr('r', 3)
+      .attr('fill', function (event) {
+        return colorScale(event.name)
+      })
+
+  </script>
+</html>
